@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "character": "水",
+    "meaning": "Agua",
+    "reading": "mizu"
+  },
+  {
+    "id": 2,
+    "character": "火",
+    "meaning": "Fuego",
+    "reading": "hi"
+  },
+  {
+    "id": 1771270642901,
+    "character": "女",
+    "meaning": "Mujer",
+    "reading": "onna"
+  },
+  {
+    "id": 1771270937003,
+    "character": "猫",
+    "meaning": "Gato",
+    "reading": "neko"
+  }
+]
