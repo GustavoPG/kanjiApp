@@ -1,97 +1,64 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { useState, useEffect } from 'react';
+import KanjiCard from './components/KanjiCard';
+import KanjiForm from './components/KanjiForm';
+import './App.css';
 
 function App() {
   const [kanjis, setKanjis] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [nuevoKanji, setNuevoKanji] = useState({ character: '', meaning: '', reading: '' });
-  const [editandoId, setEditandoId] = useState(null);
+  const [editando, setEditando] = useState(null);
 
-  // 1. Cargar datos iniciales
+  // Cargar datos
   useEffect(() => {
-    fetch('http://localhost:5000/api/kanjis')
-      .then(res => res.json())
-      .then(data => {
-        setKanjis(data);
-        setLoading(false);
-      });
+    fetch('http://localhost:5000/api/kanjis').then(res => res.json()).then(setKanjis);
   }, []);
 
-  // 2. Lógica para Guardar
-  const handleGuardar = async (e) => {
-  e.preventDefault();
-  
-  const url = editandoId 
-    ? `http://localhost:5000/api/kanjis/${editandoId}` 
-    : 'http://localhost:5000/api/kanjis';
-  
-  const metodo = editandoId ? 'PUT' : 'POST';
+  // Función unificada para Guardar/Editar
+  const handleGuardar = async (datos) => {
+    const url = editando ? `http://localhost:5000/api/kanjis/${editando.id}` : 'http://localhost:5000/api/kanjis';
+    const metodo = editando ? 'PUT' : 'POST';
 
-  const respuesta = await fetch(url, {
-    method: metodo,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(nuevoKanji)
-  });
+    const res = await fetch(url, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
 
-  if (respuesta.ok) {
-    // Refrescamos la lista completa desde el servidor para estar seguros
-    const res = await fetch('http://localhost:5000/api/kanjis');
-    const data = await res.json();
-    setKanjis(data);
-    
-    // Limpiar formulario y salir de modo edición
-    setNuevoKanji({ character: '', meaning: '', reading: '' });
-    setEditandoId(null);
-  }
-};
+    if (res.ok) {
+      // Recargamos la lista para ver cambios
+      const actualizada = await fetch('http://localhost:5000/api/kanjis').then(r => r.json());
+      setKanjis(actualizada);
+      setEditando(null);
+    }
+  };
 
-  // 3. Lógica para Borrar
   const handleBorrar = async (id) => {
-    const respuesta = await fetch(`http://localhost:5000/api/kanjis/${id}`, { method: 'DELETE' });
-    if (respuesta.ok) {
+    if (await fetch(`http://localhost:5000/api/kanjis/${id}`, { method: 'DELETE' })) {
       setKanjis(kanjis.filter(k => k.id !== id));
     }
   };
 
-  const prepararEdicion = (kanji) => {
-  setEditandoId(kanji.id);
-  setNuevoKanji({
-    character: kanji.character,
-    meaning: kanji.meaning,
-    reading: kanji.reading
-  });
-};
-
   return (
     <div className="App">
-      <h1>Mi Diccionario de Kanjis 🇯🇵</h1>
+      <h1>Kanji Sensei 🏯</h1>
       
-      {/* Formulario para agregar */}
-      <form onSubmit={handleGuardar} className="kanji-form">
-        <input placeholder="Kanji" value={nuevoKanji.character} onChange={(e) => setNuevoKanji({...nuevoKanji, character: e.target.value})} required />
-        <input placeholder="Significado" value={nuevoKanji.meaning} onChange={(e) => setNuevoKanji({...nuevoKanji, meaning: e.target.value})} required />
-        <input placeholder="Lectura" value={nuevoKanji.reading} onChange={(e) => setNuevoKanji({...nuevoKanji, reading: e.target.value})} required />
-        <button type="submit">Guardar</button>
-      </form>
+      <KanjiForm 
+        alGuardar={handleGuardar} 
+        kanjiEditando={editando} 
+        alCancelar={() => setEditando(null)} 
+      />
 
-      {loading ? <p>Cargando...</p> : (
-        <div className="kanji-grid">
-          {/* AQUÍ VA EL BLOQUE QUE PREGUNTASTE */}
-          {kanjis.map((kanji) => (
-            <div key={kanji.id} className="kanji-card">
-              <button className="delete-btn" onClick={() => handleBorrar(kanji.id)}>×</button>
-              <button className="edit-btn" onClick={() => prepararEdicion(kanji)}>✎</button>
-              <span className="character">{kanji.character}</span>
-              <div className="info">
-                <strong>{kanji.meaning}</strong>
-                <p>Lectura: {kanji.reading}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="kanji-grid">
+        {kanjis.map(k => (
+          <KanjiCard 
+            key={k.id} 
+            kanji={k} 
+            onBorrar={handleBorrar} 
+            onEditar={setEditando} 
+          />
+        ))}
+      </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
